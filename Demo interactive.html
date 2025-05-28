@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur de Direction Avancé</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #4A5568; 
+            --secondary-color: #718096;
+            --accent-color: #A0AEC0; 
+            
+            --surface-color: rgba(255, 255, 255, 0.95);
+            --surface-hover: rgba(255, 255, 255, 0.98);
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
+            --border-color: rgba(255, 255, 255, 0.2);
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            --radius-sm: 12px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 50%, var(--accent-color) 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            user-select: none;
+            overflow-x: hidden;
+            animation: gradientShift 12s ease-in-out infinite alternate;
+        }
+
+        @keyframes gradientShift {
+            0% { background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 50%, var(--accent-color) 100%); }
+            100% { background: linear-gradient(135deg, var(--accent-color) 0%, var(--primary-color) 50%, var(--secondary-color) 100%); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+        }
+
+        .card {
+            background: var(--surface-color);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .card:hover {
+            background: var(--surface-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            padding: 2rem 2rem 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .card-content {
+            padding: 2rem;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .card-title .steering-wheel-title-icon {
+            transform: rotate(180deg);
+        }
+
+        .card-subtitle {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 400;
+        }
+
+        .steering-wheel-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .steering-wheel-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+
+        .steering-wheel-glow {
+            position: absolute;
+            inset: -20px;
+            background: conic-gradient(from 0deg, var(--primary-color), var(--accent-color), var(--secondary-color), var(--primary-color));
+            border-radius: 50%;
+            opacity: 0.3;
+            filter: blur(20px);
+            animation: rotate 8s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        #steeringWheel {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+
+        #steeringWheel svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.1));
+        }
+
+        .wheel-info {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(var(--primary-color-rgb, 74, 85, 104), 0.1);
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(var(--primary-color-rgb, 74, 85, 104), 0.2);
+        }
+
+        .wheel-turns {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .wheel-status {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .controls-section {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .joystick-area {
+            text-align: center;
+            /* Augmenter la hauteur pour accommoder le joystick plus grand si nécessaire */
+            min-height: 100px; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .joystick-container {
+            width: 280px;
+            height: 60px; /* La glissière elle-même */
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 30px;
+            position: relative;
+            display: flex;
+            align-items: center; /* Centre le joystick-handle verticalement dans la glissière */
+            border: 2px solid rgba(203, 213, 225, 0.6);
+            cursor: grab;
+            touch-action: none;
+            margin: 0 auto; /* Enlevé le margin-top/bottom, géré par joystick-area */
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+        }
+
+        .joystick-container:hover {
+            border-color: var(--primary-color);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06), 0 0 0 3px rgba(var(--primary-color-rgb, 74, 85, 104), 0.1);
+        }
+
+        /* Styles pour le nouveau joystick */
+        .joystick-handle {
+            width: 56px; /* Largeur de la zone de clic/glissement */
+            height: 80px; /* Hauteur totale pour le visuel du joystick, un peu plus grand */
+            position: absolute; /* Déjà là, mais crucial */
+            left: calc(50% - 28px); /* Centre initialement */
+            /* top: 2px; -- On va le centrer verticalement dans le container via align-items du parent */
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end; /* Aligne les éléments du joystick en bas */
+            /* background: transparent; Supprimé car les enfants le couvrent */
+            /* border: none;  Supprimé */
+            /* box-shadow: none; Supprimé */
+            /* transition gérée par JS pour 'left' */
+        }
+
+        .joystick-handle:active {
+            cursor: grabbing;
+        }
+        
+        .joystick-base {
+            width: 44px; /* Plus large que le manche */
+            height: 12px;
+            background: linear-gradient(to bottom, #777, #555);
+            border-radius: 6px 6px 3px 3px; /* Arrondi en haut, plus plat en bas */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.2);
+            z-index: 1;
+        }
+
+        .joystick-stick {
+            width: 12px;
+            height: 40px; /* Hauteur du manche */
+            background: linear-gradient(to right, #bbb, #888, #bbb);
+            border-radius: 4px 4px 0 0; /* Arrondi en haut */
+            margin-bottom: -2px; /* Chevauche légèrement la base */
+            box-shadow: 0 0 3px rgba(0,0,0,0.2);
+            position: relative;
+            z-index: 2;
+        }
+
+        .joystick-grip {
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle at 35% 35%, #666, #2c3e50); /* Gris foncé avec highlight */
+            border-radius: 50%;
+            margin-bottom: -5px; /* Chevauche légèrement le manche */
+            box-shadow: inset 0 -2px 3px rgba(0,0,0,0.3), 0 3px 5px rgba(0,0,0,0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 3;
+            border: 2px solid #454545;
+        }
+
+        .joystick-grip-button {
+            width: 10px;
+            height: 10px;
+            background: #e74c3c; /* Rouge */
+            border-radius: 50%;
+            border: 1px solid #c0392b;
+            box-shadow: inset 0 0 2px rgba(0,0,0,0.5);
+        }
+
+
+        /* Effets de survol et d'activation sur le grip pour un retour visuel */
+        .joystick-handle:hover .joystick-grip {
+            transform: scale(1.05);
+            box-shadow: inset 0 -2px 3px rgba(0,0,0,0.3), 0 4px 7px rgba(0,0,0,0.5);
+        }
+        .joystick-handle:active .joystick-grip {
+            transform: scale(0.98);
+        }
+
+
+        .visualization-area {
+            background: rgba(248, 250, 252, 0.5);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+        }
+
+        .steering-visualization {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tire-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tire-container {
+            width: 50px;
+            height: 70px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .tire {
+            width: 24px;
+            height: 60px;
+            background: linear-gradient(180deg, #2d3748 0%, #1a202c 100%);
+            border: 2px solid #4a5568;
+            border-radius: 6px;
+            transform-origin: center center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .tire-angle-text {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .progress-bar-container {
+            width: 300px;
+            height: 40px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border: 2px solid rgba(203, 213, 225, 0.6);
+            border-radius: 20px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 16px;
+            color: var(--text-muted);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        .progress-bar-text-bg {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1rem;
+            pointer-events: none;
+            font-weight: 500;
+        }
+
+        .progress-bar-indicator {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: calc(50% - 18px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+            border: 2px solid white;
+        }
+
+        .value-display {
+            text-align: center;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-radius: var(--radius-md);
+            font-size: 1.125rem;
+            font-weight: 600;
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .settings-panel {
+            background: rgba(248, 250, 252, 0.8);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            border: 1px solid rgba(203, 213, 225, 0.3);
+        }
+
+        .settings-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(203, 213, 225, 0.3);
+        }
+
+        .setting-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .setting-label {
+            font-weight: 500;
+            color: var(--text-secondary);
+            flex-grow: 1;
+        }
+
+        .setting-input {
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            border: 1px solid rgba(203, 213, 225, 0.6);
+            background: white;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            min-width: 80px;
+        }
+
+        .setting-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb, 74, 85, 104), 0.1);
+        }
+
+        .setting-checkbox {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--primary-color);
+            cursor: pointer;
+        }
+
+        .icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            fill: currentColor;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @media (max-width: 1024px) {
+            .progress-bar-container { width: 250px; }
+            .joystick-container { width: 240px; }
+        }
+
+        @media (max-width: 640px) {
+            body { padding: 1rem 0.5rem; }
+            .card-content, .card-header { padding: 1.5rem; }
+            .steering-wheel-container { width: 160px; height: 160px; }
+            .progress-bar-container { width: 200px; height: 36px; }
+            .joystick-container { width: 200px; height: 50px; }
+            .joystick-handle { width: 50px; height: 70px; left: calc(50% - 25px); }
+            .joystick-base { width: 38px; height: 10px; }
+            .joystick-stick { height: 35px; width: 10px; }
+            .joystick-grip { width: 26px; height: 26px; }
+            .joystick-grip-button { width: 8px; height: 8px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <svg class="icon steering-wheel-title-icon" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/>
+                        <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                        <line x1="12" y1="3" x2="12" y2="9" stroke="currentColor" stroke-width="2"/>
+                        <line x1="3" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="2"/>
+                        <line x1="15" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    Volant de Direction
+                </h2>
+                <p class="card-subtitle">Simulation en temps réel</p>
+            </div>
+            <div class="card-content">
+                <div class="steering-wheel-section">
+                    <div class="steering-wheel-container">
+                        <div class="steering-wheel-glow"></div>
+                        <div id="steeringWheel">
+                            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="wheelGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:var(--primary-color)"/>
+                                        <stop offset="50%" style="stop-color:var(--secondary-color)"/>
+                                        <stop offset="100%" style="stop-color:var(--accent-color)"/>
+                                    </linearGradient>
+                                </defs>
+                                <circle cx="50" cy="50" r="45" stroke="url(#wheelGradient)" stroke-width="8" fill="none"/>
+                                <circle cx="50" cy="50" r="15" fill="url(#wheelGradient)"/>
+                                <line x1="50" y1="5" x2="50" y2="35" stroke="url(#wheelGradient)" stroke-width="6"/>
+                                <line x1="18" y1="65" x2="40" y2="50" stroke="url(#wheelGradient)" stroke-width="6"/>
+                                <line x1="82" y1="65" x2="60" y2="50" stroke="url(#wheelGradient)" stroke-width="6"/>
+                                <circle cx="50" cy="8" r="3" fill="#ef4444"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="wheel-info">
+                        <div class="wheel-turns" id="steeringWheelTurns">0.0 tours</div>
+                        <div class="wheel-status">Position du volant</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <rect x="2" y="8" width="20" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                        <circle cx="18" cy="12" r="2" fill="currentColor"/>
+                        <path d="M12 12l-8-4v8l8-4z" fill="currentColor"/>
+                    </svg>
+                    Contrôleur de Direction
+                </h2>
+                <p class="card-subtitle">Interface de pilotage avancée</p>
+            </div>
+            <div class="card-content">
+                <div class="controls-section">
+                    <div class="joystick-area">
+                        <div class="joystick-container" id="joystickContainer">
+                             <!-- Nouveau joystickHandle avec structure interne -->
+                            <div class="joystick-handle" id="joystickHandle">
+                                <div class="joystick-grip">
+                                    <div class="joystick-grip-button"></div>
+                                </div>
+                                <div class="joystick-stick"></div>
+                                <div class="joystick-base"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="visualization-area">
+                        <div class="steering-visualization">
+                            <div class="tire-display">
+                                <div class="tire-container">
+                                    <div class="tire" id="tireLeft"></div>
+                                </div>
+                                <div class="tire-angle-text" id="tireLeftAngleText">0°</div>
+                            </div>
+                            <div class="progress-bar-container" id="progressBarContainer">
+                                <div class="progress-bar-text-bg">
+                                    <span>⬅</span><span>•</span><span>---</span><span>⚫</span><span>---</span><span>•</span><span>➡</span>
+                                </div>
+                                <div class="progress-bar-indicator" id="progressBarIndicator"></div>
+                            </div>
+                            <div class="tire-display">
+                                <div class="tire-container">
+                                    <div class="tire" id="tireRight"></div>
+                                </div>
+                                <div class="tire-angle-text" id="tireRightAngleText">0°</div>
+                            </div>
+                        </div>
+                        <div class="value-display" id="value-display">0% Centré</div>
+                    </div>
+
+                    <div class="settings-panel">
+                        <h3 class="settings-title">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none"/>
+                                <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1m17-4a4 4 0 01-8 0 4 4 0 018 0zm-6 10a4 4 0 01-8 0 4 4 0 018 0z" stroke="currentColor" stroke-width="2" fill="none"/>
+                            </svg>
+                            Paramètres
+                        </h3>
+                        <div class="setting-row">
+                            <label class="setting-label" for="maxAngleInput">Angle Max. Roues (deg):</label>
+                            <input type="number" id="maxAngleInput" class="setting-input" min="5" max="90" step="1" value="35">
+                        </div>
+                        <div class="setting-row">
+                            <label class="setting-label" for="steeringRatioInput">Tours Volant (butée à butée):</label>
+                            <input type="number" id="steeringRatioInput" class="setting-input" min="1.0" max="5.0" step="0.1" value="3.0">
+                        </div>
+                        <div class="setting-row">
+                            <label class="setting-label" for="smoothSteeringCheckbox">Direction Douce:</label>
+                            <input type="checkbox" id="smoothSteeringCheckbox" class="setting-checkbox">
+                        </div>
+                        <div class="setting-row">
+                            <label class="setting-label" for="debugAngleInput">Angle Actuel Roues (deg):</label>
+                            <input type="number" id="debugAngleInput" class="setting-input" min="-35" max="35" step="0.1" value="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const joystickContainer = document.getElementById('joystickContainer');
+        const joystickHandle = document.getElementById('joystickHandle');
+        const progressBarIndicator = document.getElementById('progressBarIndicator');
+        const valueDisplay = document.getElementById('value-display');
+        const tireLeft = document.getElementById('tireLeft');
+        const tireRight = document.getElementById('tireRight');
+        const tireLeftAngleText = document.getElementById('tireLeftAngleText');
+        const tireRightAngleText = document.getElementById('tireRightAngleText');
+        
+        const steeringWheel = document.getElementById('steeringWheel');
+        const steeringWheelTurnsDisplay = document.getElementById('steeringWheelTurns');
+        
+        const debugAngleInput = document.getElementById('debugAngleInput');
+        const maxAngleInput = document.getElementById('maxAngleInput');
+        const steeringRatioInput = document.getElementById('steeringRatioInput');
+        const smoothSteeringCheckbox = document.getElementById('smoothSteeringCheckbox');
+
+        let isDragging = false;
+        let clickOffsetInHandle = 0;
+        let animationFrameId = null;
+        let isReturningToCenter = false;
+
+        let joystickContainerRect, handleWidth, joystickMinX, joystickMaxX, joystickContainerCenter, joystickMaxDeviation;
+        let progressBarContainerRect, indicatorWidth, progressMinX, progressMaxX;
+
+        let currentMaxTireAngle = 35;
+        let currentSteeringWheelTotalTurns = 3.0;
+        let isSmoothSteeringEnabled = false;
+        const SMOOTH_FACTOR = 2.0; 
+        const RETURN_TO_CENTER_SPEED = 0.08; 
+        let currentEffectiveJoystickPercentage = 0; 
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+        
+        function updateCssVariablesForRgb() {
+            const rootStyle = document.documentElement.style;
+            const primaryColorHex = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim();
+            const primaryRgb = hexToRgb(primaryColorHex);
+            if (primaryRgb) {
+                rootStyle.setProperty('--primary-color-rgb', `${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}`);
+            }
+        }
+
+        function calculateDimensions() {
+            joystickContainerRect = joystickContainer.getBoundingClientRect();
+            // handleWidth est la largeur de la zone cliquable '.joystick-handle'
+            handleWidth = joystickHandle.offsetWidth; 
+            joystickMinX = 0;
+            // joystickMaxX est la largeur du container MOINS la largeur du handle
+            joystickMaxX = joystickContainerRect.width - handleWidth; 
+            joystickContainerCenter = joystickContainerRect.width / 2;
+            // joystickMaxDeviation est la moitié de l'espace de mouvement total
+            joystickMaxDeviation = (joystickContainerRect.width - handleWidth) / 2;
+
+
+            const progressBarElem = document.getElementById('progressBarContainer');
+            progressBarContainerRect = progressBarElem.getBoundingClientRect();
+            indicatorWidth = progressBarIndicator.offsetWidth;
+            progressMinX = 0;
+            progressMaxX = progressBarContainerRect.width - indicatorWidth;
+        }
+        
+        function updateSettings() {
+            let newMaxAngle = parseInt(maxAngleInput.value, 10);
+            if (isNaN(newMaxAngle) || newMaxAngle < 5) newMaxAngle = 5;
+            if (newMaxAngle > 90) newMaxAngle = 90;
+            currentMaxTireAngle = newMaxAngle;
+            maxAngleInput.value = currentMaxTireAngle;
+            debugAngleInput.min = -currentMaxTireAngle; 
+            debugAngleInput.max = currentMaxTireAngle;
+
+            let newSteeringRatio = parseFloat(steeringRatioInput.value);
+            if (isNaN(newSteeringRatio) || newSteeringRatio < 1.0) newSteeringRatio = 1.0;
+            if (newSteeringRatio > 5.0) newSteeringRatio = 5.0;
+            currentSteeringWheelTotalTurns = newSteeringRatio;
+            steeringRatioInput.value = currentSteeringWheelTotalTurns.toFixed(1);
+
+            isSmoothSteeringEnabled = smoothSteeringCheckbox.checked;
+
+            let currentAngleDeg = parseFloat(debugAngleInput.value);
+            if (isNaN(currentAngleDeg)) currentAngleDeg = 0;
+            
+            if (Math.abs(currentAngleDeg) > currentMaxTireAngle) {
+                currentAngleDeg = Math.sign(currentAngleDeg) * currentMaxTireAngle;
+            }
+            debugAngleInput.value = currentAngleDeg.toFixed(1);
+            
+            let effectivePercentage = degreesToPercentage(currentAngleDeg); 
+            currentEffectiveJoystickPercentage = effectivePercentage; 
+
+            let joystickPhysicalPercentage = effectivePercentage;
+            if (isSmoothSteeringEnabled && SMOOTH_FACTOR !== 1) {
+                const normEffective = effectivePercentage / 100; 
+                const normPhysical = Math.sign(normEffective) * Math.pow(Math.abs(normEffective), 1 / SMOOTH_FACTOR);
+                joystickPhysicalPercentage = normPhysical * 100;
+            }
+            
+            updateJoystickHandlePosition(joystickPhysicalPercentage, true);
+            updateVisualsFromPercentage(currentEffectiveJoystickPercentage, true);
+        }
+
+        function degreesToPercentage(degrees) {
+            if (currentMaxTireAngle === 0) return 0;
+            return Math.max(-100, Math.min(100, -(degrees / currentMaxTireAngle) * 100));
+        }
+
+        function percentageToDegrees(percentage) {
+            return -(percentage / 100) * currentMaxTireAngle;
+        }
+
+        function updateJoystickHandlePosition(joystickPhysicalPercentage, smoothUpdate = false) {
+            // Le centre du *handle* est ce qui s'aligne avec le centre de la *deviation*
+            // Donc, la position 'left' du handle est (centre du container - moitié largeur handle) - (pourcentage * déviation max)
+            const handleLeftPosition = (joystickContainerCenter - (handleWidth / 2)) - (joystickPhysicalPercentage / 100) * joystickMaxDeviation;
+
+            if (smoothUpdate) {
+                joystickHandle.style.transition = 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            } else {
+                joystickHandle.style.transition = 'none';
+            }
+            joystickHandle.style.left = `${Math.max(joystickMinX, Math.min(handleLeftPosition, joystickMaxX))}px`;
+        }
+
+        function updateVisualsFromPercentage(effectivePercentage, smoothUpdate = false) {
+            if (!valueDisplay) return;
+            let text = "";
+            let displayPercentageVal = effectivePercentage.toFixed(0); 
+            
+            if (effectivePercentage > 0.5) { 
+                text = `${displayPercentageVal}% Gauche`;
+            } else if (effectivePercentage < -0.5) { 
+                text = `${displayPercentageVal}% Droite`;
+            } else { 
+                text = "0% Centré"; 
+            }
+            valueDisplay.textContent = text;
+
+            const progressBarPositionPercent = (-effectivePercentage + 100) / 2; 
+            const indicatorLeft = (progressBarPositionPercent / 100) * progressMaxX;
+            
+            const transitionStyle = smoothUpdate ? '0.3s cubic-bezier(0.4, 0, 0.2, 1)' : 'none';
+            progressBarIndicator.style.transitionProperty = 'left';
+            progressBarIndicator.style.transitionDuration = smoothUpdate ? '0.3s' : '0s';
+            progressBarIndicator.style.transitionTimingFunction = smoothUpdate ? 'cubic-bezier(0.4, 0, 0.2, 1)' : 'linear';
+
+            progressBarIndicator.style.left = `${Math.max(progressMinX, Math.min(indicatorLeft, progressMaxX))}px`;
+
+            const tireRotationAngle = percentageToDegrees(effectivePercentage);
+            const tireAngleTextVal = `${tireRotationAngle.toFixed(0)}°`;
+            
+            const transformTransitionStyle = smoothUpdate ? 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' : 'none';
+
+            [tireLeft, tireRight, steeringWheel].forEach(el => {
+                if (el) el.style.transition = transformTransitionStyle;
+            });
+
+            if (tireLeft) {
+                tireLeft.style.transform = `rotate(${tireRotationAngle}deg)`;
+                tireLeftAngleText.textContent = tireAngleTextVal;
+            }
+            if (tireRight) {
+                tireRight.style.transform = `rotate(${tireRotationAngle}deg)`;
+                tireRightAngleText.textContent = tireAngleTextVal;
+            }
+            
+            const steeringWheelTotalRotation = -(effectivePercentage / 100) * (currentSteeringWheelTotalTurns / 2) * 360;
+            if (steeringWheel) {
+                steeringWheel.style.transform = `rotate(${steeringWheelTotalRotation}deg)`;
+            }
+            
+            const wheelTurns = -(effectivePercentage / 100) * (currentSteeringWheelTotalTurns / 2);
+            steeringWheelTurnsDisplay.textContent = `${wheelTurns.toFixed(1)} tours`;
+            
+            if (document.activeElement !== debugAngleInput) {
+                 debugAngleInput.value = tireRotationAngle.toFixed(1);
+            }
+        }
+
+        function animateReturnToCenter() {
+            if (isDragging || Math.abs(currentEffectiveJoystickPercentage) < 0.1) {
+                isReturningToCenter = false;
+                if (Math.abs(currentEffectiveJoystickPercentage) < 0.1) {
+                    currentEffectiveJoystickPercentage = 0;
+                    updateJoystickHandlePosition(0, false); 
+                    updateVisualsFromPercentage(0, false);
+                }
+                animationFrameId = null;
+                return;
+            }
+            isReturningToCenter = true;
+
+            const targetPercentage = 0;
+            const diff = targetPercentage - currentEffectiveJoystickPercentage;
+            let step = diff * RETURN_TO_CENTER_SPEED;
+
+            if (Math.abs(diff) < 0.1) {
+                 currentEffectiveJoystickPercentage = 0;
+            } else {
+                 currentEffectiveJoystickPercentage += step;
+            }
+            
+            let joystickPhysicalPercentage = currentEffectiveJoystickPercentage;
+            if (isSmoothSteeringEnabled && SMOOTH_FACTOR !== 1) {
+                const normEffective = currentEffectiveJoystickPercentage / 100;
+                const normPhysical = Math.sign(normEffective) * Math.pow(Math.abs(normEffective), 1 / SMOOTH_FACTOR);
+                joystickPhysicalPercentage = normPhysical * 100;
+            }
+
+            updateJoystickHandlePosition(joystickPhysicalPercentage, false);
+            updateVisualsFromPercentage(currentEffectiveJoystickPercentage, false);
+
+            if (Math.abs(currentEffectiveJoystickPercentage) > 0.05) {
+                animationFrameId = requestAnimationFrame(animateReturnToCenter);
+            } else {
+                currentEffectiveJoystickPercentage = 0;
+                updateJoystickHandlePosition(0, false);
+                updateVisualsFromPercentage(0, false);
+                isReturningToCenter = false;
+                animationFrameId = null;
+            }
+        }
+
+        function startDrag(event) {
+            isDragging = true;
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            isReturningToCenter = false;
+            
+            joystickHandle.style.cursor = 'grabbing';
+            
+            let clientX = event.type.startsWith('touch') ? event.touches[0].clientX : event.clientX;
+            // clickOffsetInHandle est la distance entre le clic et le bord gauche du *handle*
+            clickOffsetInHandle = clientX - joystickHandle.getBoundingClientRect().left;
+
+
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('touchmove', drag, { passive: false }); 
+            document.addEventListener('mouseup', stopDrag);
+            document.addEventListener('touchend', stopDrag);
+        }
+
+        function drag(event) {
+            if (!isDragging) return;
+            event.preventDefault(); 
+
+            let clientX = event.type.startsWith('touch') ? event.touches[0].clientX : event.clientX;
+            // newLeft est la position souhaitée du bord gauche du *handle* par rapport au *container*
+            let newLeft = clientX - joystickContainerRect.left - clickOffsetInHandle;
+            newLeft = Math.max(joystickMinX, Math.min(newLeft, joystickMaxX));
+            
+            let joystickPhysicalPercentage = 0;
+            if (joystickMaxDeviation !== 0) { // Eviter division par zéro si pas de déviation possible
+                // (newLeft - joystickMinX) / (2 * joystickMaxDeviation) donne 0 à 1 pour la plage de mouvement
+                // ou ( newLeft - (containerCenter - handleWidth/2 - maxDeviation) ) / (2 * maxDeviation)
+                // Plus simple: le centre du handle est à newLeft + handleWidth/2.
+                // Sa position par rapport au centre du container: (newLeft + handleWidth/2) - containerCenter
+                // Normalisé par maxDeviation: ((newLeft + handleWidth/2) - containerCenter) / joystickMaxDeviation
+                // Cela donne de -1 (extrême gauche du handle au centre de déviation gauche) à +1 (extrême droite)
+                // On veut l'inverse: +100 pour gauche, -100 pour droite.
+                 joystickPhysicalPercentage = -(((newLeft + handleWidth / 2) - joystickContainerCenter) / joystickMaxDeviation) * 100;
+                 joystickPhysicalPercentage = Math.max(-100, Math.min(100, joystickPhysicalPercentage)); // Clamper
+            }
+
+
+            let effectivePercentage = joystickPhysicalPercentage;
+            if (isSmoothSteeringEnabled && SMOOTH_FACTOR !== 1) {
+                const normPhysical = joystickPhysicalPercentage / 100; 
+                const normEffective = Math.sign(normPhysical) * Math.pow(Math.abs(normPhysical), SMOOTH_FACTOR);
+                effectivePercentage = normEffective * 100;
+            }
+            
+            currentEffectiveJoystickPercentage = effectivePercentage;
+            
+            joystickHandle.style.transition = 'none'; 
+            joystickHandle.style.left = `${newLeft}px`; 
+
+            updateVisualsFromPercentage(currentEffectiveJoystickPercentage, false);
+        }
+
+        function stopDrag() {
+            if (!isDragging) return;
+            isDragging = false;
+            joystickHandle.style.cursor = 'grab';
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('touchmove', drag);
+            document.removeEventListener('mouseup', stopDrag);
+            document.removeEventListener('touchend', stopDrag);
+            
+            if (!isReturningToCenter && !animationFrameId) {
+                animationFrameId = requestAnimationFrame(animateReturnToCenter);
+            }
+        }
+
+        joystickHandle.addEventListener('mousedown', startDrag);
+        joystickHandle.addEventListener('touchstart', startDrag, { passive: false });
+
+        maxAngleInput.addEventListener('input', updateSettings);
+        steeringRatioInput.addEventListener('input', updateSettings);
+        smoothSteeringCheckbox.addEventListener('change', updateSettings);
+        debugAngleInput.addEventListener('change', () => { 
+            updateSettings();
+        });
+
+
+        window.addEventListener('load', () => {
+            updateCssVariablesForRgb();
+            calculateDimensions();
+            updateSettings(); 
+        });
+        window.addEventListener('resize', () => {
+            calculateDimensions();
+            let joystickPhysicalPercentage = currentEffectiveJoystickPercentage;
+            if (isSmoothSteeringEnabled && SMOOTH_FACTOR !== 1) {
+                const normEffective = currentEffectiveJoystickPercentage / 100;
+                const normPhysical = Math.sign(normEffective) * Math.pow(Math.abs(normEffective), 1 / SMOOTH_FACTOR);
+                joystickPhysicalPercentage = normPhysical * 100;
+            }
+            updateJoystickHandlePosition(joystickPhysicalPercentage, false);
+            updateVisualsFromPercentage(currentEffectiveJoystickPercentage, false);
+        });
+
+    </script>
+</body>
+</html>
