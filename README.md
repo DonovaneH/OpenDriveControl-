@@ -74,17 +74,17 @@ loop() {
 
    - Précis (Chaque millimètre compte)
    - Doux (Réaction du moteur moins instantanée et beaucoup plus douce (Idéale pour l'autoroute))
-   - Représentation graphique en temps réel de l'angle des roues avec une règle des de l'inclinaisons du volant
+   - Représentation graphique en temps réel de l'angle des roues avec une règle des inclinaisons du volant
 
-## Via un un/des boutons dédié :
+## Via un ou des boutons dédiés :
 - Clignotants G et D (CanBus)
 
 
-# Implémenter une logique de sécuriter à chaque démarrage
+# Implémenter une logique de sécurité à chaque démarrage
 
--   Initialiser le système en tarant bien à 0 le centarge du volant avec le 0 du levier
--   Si le couple de braquage est supérieur à `X NM` alors mise en sécuriter et reproceder à l'étape d'initialisation !
--   Test initiale après l'initialisation d'un 100% à gauche + 0% au centre + 100% à droite ce qui nous donne une visulation comme ceci : 
+-   Initialiser le système en tapant bien à 0 le centrage du volant avec le 0 du levier
+-   Si le couple de braquage est supérieur à `X NM`, alors mise en sécurité et procéder à l'étape d'initialisation !
+-   Test initial après l'initialisation d'un 100% à gauche + 0% au centre + 100% à droite, ce qui nous donne une visualisation comme ceci : 
 
 >Note : ` • = Position du volant` 
 
