@@ -1,13 +1,13 @@
 # OpenDrive Control -  Direction automobile contrôlée par joystick
 
 
-## 🧠 Objectif
+## Objectif
 
 Remplacer le volant traditionnel par un **joystick proportionnel** contrôlant l’angle de braquage via un **moteur 12V**, en agissant directement sur le volant via une **roue dentée soudée**.
 
 ---
 
-## ⚙️ Principe de fonctionnement
+## Principe de fonctionnement
 
 - Un **joystick analogique** (auto-centrant) donne une valeur proportionnelle à l’inclinaison du levier.
 - Cette valeur est convertie en **consigne d’angle de braquage**.
@@ -61,3 +61,36 @@ loop() {
   
   setMotor(motorSpeed);
 }
+```
+---
+
+
+# Idées qui peuvent être ajoutées au projet
+
+
+## Via un écran dédié :
+
+- Logique de contrôle du mouvement (Selon mode)
+
+   - Précis (Chaque millimètre compte)
+   - Doux (Réaction du moteur moins instantanée et beaucoup plus douce (Idéale pour l'autoroute))
+   - Représentation graphique en temps réel de l'angle des roues avec une règle des de l'inclinaisons du volant
+
+## Via un un/des boutons dédié :
+- Clignotants G et D (CanBus)
+
+
+# Implémenter une logique de sécuriter à chaque démarrage
+
+-   Initialiser le système en tarant bien à 0 le centarge du volant avec le 0 du levier
+-   Si le couple de braquage est supérieur à `X NM` alors mise en sécuriter et reproceder à l'étape d'initialisation !
+-   Test initiale après l'initialisation d'un 100% à gauche + 0% au centre + 100% à droite ce qui nous donne une visulation comme ceci : 
+
+>Note : ` • = Position du volant` 
+
+| Pourcentage | Direction | Représentation               |
+|-------------|-----------|------------------------------|
+| 100%        | Gauche    | ¦•---------○----------¦       |
+| 0%          | Centré    | ¦----------•----------¦       |
+| 100%        | Droite    | ¦----------○---------•¦       |
+
